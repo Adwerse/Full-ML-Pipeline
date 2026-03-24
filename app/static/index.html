@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Language Detector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-1: #091015;
+        --bg-2: #102034;
+        --ink: #eaf6ff;
+        --muted: #b5cad8;
+        --card: rgba(10, 22, 34, 0.8);
+        --accent: #24c6dc;
+        --accent-2: #1de9b6;
+        --danger: #ff8080;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 10% 15%, rgba(36, 198, 220, 0.25), transparent 35%),
+          radial-gradient(circle at 88% 82%, rgba(29, 233, 182, 0.2), transparent 40%),
+          linear-gradient(160deg, var(--bg-1), var(--bg-2));
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .card {
+        width: min(760px, 100%);
+        background: var(--card);
+        border: 1px solid rgba(234, 246, 255, 0.2);
+        border-radius: 20px;
+        padding: 24px;
+        backdrop-filter: blur(6px);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(1.4rem, 3.2vw, 2rem);
+      }
+
+      p {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 140px;
+        resize: vertical;
+        border-radius: 14px;
+        border: 1px solid rgba(234, 246, 255, 0.2);
+        background: rgba(3, 10, 18, 0.9);
+        color: var(--ink);
+        padding: 14px;
+        font: inherit;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        border: 0;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font: inherit;
+        font-weight: 700;
+        color: #021117;
+        background: linear-gradient(120deg, var(--accent), var(--accent-2));
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+
+      .result {
+        margin-top: 16px;
+        padding: 12px;
+        border-radius: 12px;
+        background: rgba(2, 14, 24, 0.9);
+        border: 1px solid rgba(234, 246, 255, 0.15);
+      }
+
+      .error {
+        color: var(--danger);
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Language Detector</h1>
+      <p>Type any sentence and get the predicted language.</p>
+
+      <textarea id="text" placeholder="Example: Bonjour, je m'appelle Adam."></textarea>
+
+      <div class="controls">
+        <button id="detectBtn">Detect language</button>
+      </div>
+
+      <div id="result" class="result muted">Waiting for input...</div>
+    </main>
+
+    <script>
+      const detectBtn = document.getElementById("detectBtn");
+      const textInput = document.getElementById("text");
+      const result = document.getElementById("result");
+
+      async function detectLanguage() {
+        const text = textInput.value.trim();
+
+        if (!text) {
+          result.className = "result error";
+          result.textContent = "Please enter some text first.";
+          return;
+        }
+
+        detectBtn.disabled = true;
+        result.className = "result muted";
+        result.textContent = "Predicting...";
+
+        try {
+          const response = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+
+          if (!response.ok) {
+            throw new Error("Request failed with status " + response.status);
+          }
+
+          const data = await response.json();
+          result.className = "result";
+          result.textContent = "Detected language: " + data.language;
+        } catch (error) {
+          result.className = "result error";
+          result.textContent = "Request error: " + error.message;
+        } finally {
+          detectBtn.disabled = false;
+        }
+      }
+
+      detectBtn.addEventListener("click", detectLanguage);
+    </script>
+  </body>
+</html>
